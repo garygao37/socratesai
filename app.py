@@ -1,5 +1,7 @@
 from dash import Dash, html, dcc, Input, Output, State, callback
 import dash_bootstrap_components as dbc
+from inference import pipeline
+from dataset import load_dataset
 
 app = Dash(__name__, suppress_callback_exceptions=True, external_stylesheets=[dbc.themes.BOOTSTRAP])
 
@@ -181,7 +183,8 @@ app.layout = html.Div([
 #     )
 
 @callback(
-    Output('container-button-basic', 'children'),
+    # Output('container-button-basic', 'children'),
+    Output('article_box', 'value'),
     Input('submit-val', 'n_clicks'),
     State('input-on-submit', 'value'),
     prevent_initial_call=True,
@@ -191,9 +194,17 @@ def update_output(n_clicks, value):
     print("hello world")
     print(n_clicks)
     print(value)
-    return 'The input value was "{}" and the button has been clicked {} times'.format(
-        value,
-        n_clicks
+    articles, article_embs = load_dataset()
+    select_article, top5_quotes = pipeline(value, article_embs, articles)
+    print(select_article)
+    print(top5_quotes)
+    #'The input value was "{}" and the button has been clicked {} times'.format
+    return (
+        # value,
+        # n_clicks,
+        # select_article
+        # top5_quotes
+        select_article  # Assuming select_article is a string
     )
 
 

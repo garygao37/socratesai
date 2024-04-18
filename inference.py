@@ -18,6 +18,9 @@ def top_k_indices(cos_similarities, k):
 
 def cosine_similarity(query_emb, article_embs, k=1):
     # Compute dot product of query with each article embedding
+    print("query;", query_emb.shape)
+    print(type(article_embs))
+    print("article;", article_embs.shape)
     dot_products = np.dot(article_embs, query_emb)
     
     # Compute norms of query and article embeddings
@@ -40,11 +43,24 @@ def break_articles_into_sentences(article):
   return(sentences)
 
 def pipeline(query, article_embs, articles):
+    print("type of", type(article_embs))
+    print("type of", type(articles))
+    print(query)
     #return top article and quotes.
     #but the quotes require ranking - perhaps need more helper functions? 
+    """
+    the user query, article embeddings(from colab), and the article list are inputted. The selected article and the top 5 quotes are returned. 
+    """
+
+    print("in the pipeline")
+
     query_vec = getQueryEmbed(query)
+    print("Got the query vector")
     cos_sim, article_index = cosine_similarity(query_vec, article_embs)
+    print("Cosine Similarity")
     print(article_index)
+
+    print("Right after cos")
 
     selected_article = articles[article_index]
     sentence_list = break_articles_into_sentences(selected_article)
@@ -53,13 +69,15 @@ def pipeline(query, article_embs, articles):
         sim = cosine(query_vec, sbert_model.encode([sent])[0])
         sentence_sim_list.append((sim, sent))
         print(sim, sent)
-    
+    print("iterating through the sentences")
     sorted_sentence_sim_list = sorted(sentence_sim_list, key=lambda x: x[0], reverse=True) #Sorting tuples with the lambda function
     top5 = sorted_sentence_sim_list[0:5] #(cos similarity, sentence)
-    sentence_embeddings = np.vstack(top5)
+    top5_sentences = [sentence for _, sentence in top5]
+    print("getting the top5")
+    sentence_embeddings = np.vstack(top5_sentences)
+    print("stacking")
 
-
-    return (articles[article_index], sorted_sentence_sim_list)
+    return (articles[article_index], top5_sentences)
 
 if __name__ == "__main__":
     query="who is Daniel Radcliffe?"
