@@ -2,6 +2,7 @@ from dash import Dash, html, dcc, Input, Output, State, callback
 import dash_bootstrap_components as dbc
 from inference import pipeline
 from dataset import load_dataset
+from inference import break_articles_into_sentences
 
 app = Dash(__name__, suppress_callback_exceptions=True, external_stylesheets=[dbc.themes.BOOTSTRAP])
 
@@ -113,12 +114,8 @@ home_layout = html.Div([
                     html.H3('Your Citations', style={'color': '#2A4849'}),
                     html.Hr(),
                     html.Div(
-                        dcc.Textarea(
-                            value=dummy_article_content, 
-                            style={'width': '100%', 'height': 200, 'overflowY': 'scroll'},
-                            id = 'article_box'
-                        ),
-                        style={'height': '60%', 'overflow': 'hidden'}
+                        id='article_box', 
+                        style={'width': '100%', 'height': 200, 'overflowY': 'scroll', 'white-space': 'pre-wrap'}
                     ),
                     html.Div(
                         [dbc.Button(f"Quote {i}", color="light", className="me-1") for i in range(1, 6)],
@@ -182,15 +179,57 @@ app.layout = html.Div([
 #         n_clicks
 #     )
 
+# @callback(
+#     # Output('container-button-basic', 'children'),
+#     Output('article_box', 'children'),
+#     Input('submit-val', 'n_clicks'),
+#     State('input-on-submit', 'value'),
+#     prevent_initial_call=True,
+#     suppress_callback_exceptions=True
+# )
+# def update_output(n_clicks, value):
+#     print("hello world")
+#     print(n_clicks)
+#     print(value)
+#     articles, article_embs = load_dataset()
+#     select_article, top5_quotes = pipeline(value, article_embs, articles)
+#     print(select_article)
+#     print(top5_quotes)
+#     #'The input value was "{}" and the button has been clicked {} times'.format
+
+#     articles, top5_sentences = your_existing_logic(value)  # Make sure this returns the full article and the top 5 sentences
+
+#     # Construct HTML content
+#     highlighted_text = []
+#     for sentence in break_articles_into_sentences(articles):
+#         if sentence in top5_sentences:
+#             # Highlight this sentence
+#             highlighted_text.append(html.Span(sentence, style={'background-color': 'yellow'}))
+#         else:
+#             # Regular sentence
+#             highlighted_text.append(html.Span(sentence))
+#         highlighted_text.append(" ")  # Add space between sentences
+
+#     return (
+#         # value,
+#         # n_clicks,
+#         # select_article
+#         # top5_quotes
+#         select_article,  # Assuming select_article is a string
+#         html.Div(highlighted_text)
+#     )
+
+
 @callback(
-    # Output('container-button-basic', 'children'),
-    Output('article_box', 'value'),
+    Output('article_box', 'children'),  # Update to use 'children' since we are returning HTML elements now
     Input('submit-val', 'n_clicks'),
     State('input-on-submit', 'value'),
     prevent_initial_call=True,
     suppress_callback_exceptions=True
 )
 def update_output(n_clicks, value):
+    
+
     print("hello world")
     print(n_clicks)
     print(value)
@@ -199,13 +238,19 @@ def update_output(n_clicks, value):
     print(select_article)
     print(top5_quotes)
     #'The input value was "{}" and the button has been clicked {} times'.format
-    return (
-        # value,
-        # n_clicks,
-        # select_article
-        # top5_quotes
-        select_article  # Assuming select_article is a string
-    )
+
+    # Construct HTML content
+    highlighted_text = []
+    for sentence in break_articles_into_sentences(select_article):
+        if sentence in top5_quotes:
+            # Highlight this sentence
+            highlighted_text.append(html.Span(sentence, style={'background-color': 'yellow'}))
+        else:
+            # Regular sentence
+            highlighted_text.append(html.Span(sentence))
+        highlighted_text.append(" ")  # Add space between sentences
+
+    return html.Div(highlighted_text)
 
 
 #----------------------------------------------------------------------------------------------------------------------------------------------------------------
