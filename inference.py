@@ -20,6 +20,7 @@ def cosine_similarity(query_emb, article_embs, k=1):
     # Compute dot product of query with each article embedding
     print("query;", query_emb.shape)
     print(type(article_embs))
+    article_embs = np.array(article_embs)  # Convert list to numpy array
     print("article;", article_embs.shape)
     dot_products = np.dot(article_embs, query_emb)
     
