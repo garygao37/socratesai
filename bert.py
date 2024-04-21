@@ -13,4 +13,11 @@ def getDataset (textarea_values):
     embed = sbert_model.encode([sent])[0]
     embeddings.append(embed)
   stacked_embeddings = np.vstack(embeddings)
+  print(stacked_embeddings.shape)
   return stacked_embeddings
+
+if __name__ == "__main__":
+    textarea_values = ["This is a test", "This is another test"]
+    stacked_embeddings = getDataset(textarea_values)
+    print(stacked_embeddings)
+    print(stacked_embeddings.shape)

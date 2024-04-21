@@ -1,48 +1,64 @@
 import dash
-from dash import Dash, html, dcc, Input, Output, State, callback
+from dash import Dash, html, dcc, Input, Output, State, callback, callback_context, no_update, dash_table, ctx
 import dash_bootstrap_components as dbc
+
 from inference import pipeline
 from dataset import load_dataset
 from dataset import load_dataset_2
 from inference import break_articles_into_sentences
 from fluff import openai
-from dash import callback_context
-from dash.exceptions import PreventUpdate
-
-from dash.exceptions import PreventUpdate
-from dash import no_update
-
 from dataset import load_data_function
+
+from dash.exceptions import PreventUpdate
+from dash.dependencies import ALL
+import pandas as pd
 
 app = Dash(__name__, suppress_callback_exceptions=True, external_stylesheets=[dbc.themes.BOOTSTRAP])
 
 store = dcc.Store(id='store-quotes')
-
-# Define the structure of the dummy article
-dummy_article_content = """
-Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vivamus lacinia odio vitae vestibulum.
-Sed nec felis pellentesque, lacinia dui sed, ultricies sapien. Pellentesque orci lectus, consectetur vel,
-posuere at, dui. Nunc tortor heu, auctor quis, euismod ut, mi. Aenean sed adipiscing diam donec adipiscing.
-"""
 
 import dash_bootstrap_components as dbc
 from dash import html, dcc
 
 # Updated layout for your database page with clear section headers
 databases_layout = html.Div([
+
     # Main Title: Your Databases
     html.Div([
         html.H1("Your Databases", style={'fontSize': '48px', 'color': '#2A4849'}),
     ], style={'textAlign': 'center', 'width': '100%', 'marginBottom': '20px'}),
 
-    # Header for General Databases
-    html.H3("General Databases", style={'color': '#2A4849', 'marginBottom': '5px', 'font-weight': 'bold'}),
-    
-    # Line Divider
-    html.Hr(),
-
-    # General Databases Section
+    # Create Your Own Database Section
     html.Div([
+        # Header for Create Your Own Database
+        html.Div([
+            html.H3("Create Your Own Database", style={'color': '#2A4849', 'font-weight': 'bold'}),
+        ], style={'textAlign': 'center', 'padding': '10px', 'backgroundColor': '#dfe7df', 'borderRadius': '10px'}),
+
+        # Inside the Rectangle
+        html.Div([
+            # Left side - Information about creating a dataset 
+            html.Div([
+                html.H4("About Creating Your Own Dataset", style={'color': '#2A4849', 'marginBottom': '5px', 'font-weight': 'bold'}),
+                html.P("Create your own dataset allows you to determine the lens in which your query will be analyzed in through a reliable and trasparent way. A same article and query analyzed through one set of dataset composition will yield a different result than another. Find the lens and answer you want by varying the dataset composition by your desire. Happy Exploring!", style={'color': '#2A4849'}),
+            ], style={'width': '50%', 'padding': '10px'}),
+
+            # Right side - Button to create dataset
+            html.Div([
+                dbc.Button("Create Dataset", id='create-dataset', href="/create-dataset", color="success", size="lg", style={'display': 'block', 'margin': '0 auto', 'padding': '10px'}),
+            ], style={'width': '50%', 'textAlign': 'center'}),
+        ], style={'display': 'flex', 'justifyContent': 'space-between', 'padding': '10px'}),
+
+    ], style={'backgroundColor': '#eeefee', 'padding': '20px', 'borderRadius': '15px', 'border': '1px solid #ccc'}),
+
+    # Header for General Databases
+    html.Div([
+        html.H3("General Databases", style={'color': '#2A4849', 'marginBottom': '5px', 'font-weight': 'bold'}),
+
+        # Line Divider
+        html.Hr(),
+
+        # General Databases Section
         html.Div([
             html.Div([
                 html.H3("General News CNN:", style={'color': '#2A4849', 'marginBottom': '10px'}),
@@ -53,14 +69,11 @@ databases_layout = html.Div([
                     'padding': '5px 10px',
                     'borderRadius': '5px',
                     'fontSize': '16px'
-                })
+                }),
             ], style={'display': 'flex', 'alignItems': 'center'}),
+
             html.Div([
-                dcc.Textarea(
-                    id='database-description-1',
-                    value="Random text about the Aviation General database...",
-                    style={'width': '70%', 'height': '150px', 'resize': 'none'}
-                ),
+                html.P("Random text about another database...", style={'width': '70%', 'height': '150px'}),
                 dbc.Button("Select", id='change-1', color="primary", size="lg", style={'height': '150px', 'width': '150px'}),
             ], style={'display': 'flex', 'justifyContent': 'space-between'}),
         ], style={'marginBottom': '20px'}),
@@ -76,54 +89,43 @@ databases_layout = html.Div([
                     'padding': '5px 10px',
                     'borderRadius': '5px',
                     'fontSize': '16px'
-                })
+                }),
             ], style={'display': 'flex', 'alignItems': 'center'}),
+
             html.Div([
-                dcc.Textarea(
-                    id='database-description-2',
-                    value="Random text about another database...",
-                    style={'width': '70%', 'height': '150px', 'resize': 'none'}
-                ),
+                html.P("Random text about another database...", style={'width': '70%', 'height': '150px'}),
                 dbc.Button("Select", id='change-2', color="primary", size="lg", style={'height': '150px', 'width': '150px'}),
             ], style={'display': 'flex', 'justifyContent': 'space-between'}),
-        ]),
-    ], style={'marginBottom': '20px'}),
+        ], style={'marginBottom': '20px'}),
+    ]),
 
     # Header for Specialized Databases
-    html.H3("Specialized Databases", style={'color': '#2A4849', 'marginBottom': '5px', 'font-weight': 'bold'}),
-    
-    # Line Divider
-    html.Hr(),
-
-    # Specialized Databases Section
     html.Div([
-        # Placeholder or additional database entries can be added here
-        html.P("No specialized databases currently available.", style={'textAlign': 'center'}),
-    ], style={'marginBottom': '20px'}),
+        html.H3("Specialized Databases", style={'color': '#2A4849', 'marginBottom': '5px', 'font-weight': 'bold'}),
+
+        # Line Divider
+        html.Hr(),
+
+        # Specialized Databases Section
+        html.Div([
+            # Placeholder or additional database entries can be added here
+            html.P("No specialized databases currently available.", style={'textAlign': 'center'}),
+        ], style={'marginBottom': '20px'}),
+    ]),
 
     # Header for Shared Organizational Databases
-    html.H3("Create Your Own Database", style={'color': '#2A4849', 'marginBottom': '5px', 'font-weight': 'bold'}),
-
-    #Line Divider
-    html.Hr(),
-
-    # Specialized Databases Section
     html.Div([
-        # Placeholder or additional database entries can be added here
-        html.P("No shared organizational databases currently avaliable (will be included in future versions)", style={'textAlign': 'center'}),
-    ], style={'marginBottom': '20px'}),
+        html.H3("Shared Organizational Databases", style={'color': '#2A4849', 'marginBottom': '5px', 'font-weight': 'bold'}),
 
-    # Header for Create Your Own Database
-    html.H3("Create Your Own Database", style={'color': '#2A4849', 'marginBottom': '5px', 'font-weight': 'bold'}),
+        # Line Divider
+        html.Hr(),
 
-    # Line Divider
-    html.Hr(),
-
-    # Create Your Own Database Button
-    html.Div([
-        dbc.Button("Create Dataset", id='create-dataset', href="/create-dataset", color="success", style={'display': 'block', 'margin': '0 auto'})
-    ], style={'textAlign': 'center', 'marginBottom': '20px'}),
-], style={'backgroundColor': '#eeefee', 'padding': '20px'})
+        # Shared Organizational Databases Section
+        html.Div([
+            html.P("No shared organizational databases currently available (will be included in future versions)", style={'textAlign': 'center'}),
+        ], style={'marginBottom': '20px'}),
+    ]),
+])
 
 
 
@@ -135,23 +137,32 @@ def create_dataset_page():
         dbc.Button("Return to Databases", href="/databases", color="secondary", className="mb-3"),
         
         dbc.Container([
-            html.Div(id='data-input-fields', children=[
-                dbc.Textarea(placeholder="Paste your dataset here", style={'width': '100%', 'height': '100px'}, className="mb-2")
-            ]),
-            dbc.Button("Add Another Data", id='add-data', n_clicks=0, className="me-2"),
-            dbc.Button("Done", id='submit-data', n_clicks=0, className="me-2", disabled=True),
-            html.Div(id='data-submission-status')
-        ], fluid=True)
+            html.Div(
+                id='data-input-fields',
+                children=[
+                    dcc.Textarea(
+                        id='textarea-example',
+                        value='',
+                        style={'width': '100%', 'height': 300},
+                    ),
+                    html.Div(id='textarea-example-output', style={'whiteSpace': 'pre-line'})
+                ]
+            ),
+            dbc.Button(
+                "Add Another Data",
+                id='add-data',
+                n_clicks=0,
+                className="me-2",
+            ),
+            html.Button('Submit', id='btn-nclicks-1-@', n_clicks=0),
+            html.Div(id='data-submission-status'),
+        ], fluid=True),
     ])
 
-
-from dash.exceptions import PreventUpdate
-from dash.dependencies import ALL
-
-@app.callback(
+@callback(
     Output('data-input-fields', 'children'),
     Input('add-data', 'n_clicks'),
-    State('data-input-fields', 'children'),
+    State('data-input-fields', 'children'), #What is this here for? This can only be a state but data input fields is a div..
     prevent_initial_call=True
 )
 def add_data_textarea(n_clicks, children):
@@ -159,98 +170,8 @@ def add_data_textarea(n_clicks, children):
     children.append(new_textarea)
     return children
 
-@app.callback(
-    Output('submit-data', 'disabled'),
-    Input({'type': 'dynamic-textarea', 'index': ALL}, 'value')
-)
-def update_submit_button_status(textarea_values):
-    if all(textarea_values):
-        return False
-    return True
-
-@app.callback(
-    Output('data-submission-status', 'children'),
-    Input('submit-data', 'n_clicks'),
-    State({'type': 'dynamic-textarea', 'index': ALL}, 'value'),
-    prevent_initial_call=True
-)
-def submit_data(n_clicks, textarea_values):
-    # Ensure all textareas have been filled
-    if not all(textarea_values):
-        return "Please fill in all the text-boxes before submitting."
-
-    # Process the data
-    result = load_data_function(textarea_values)
-
-    # Show some basic information about the processed data
-    return f"Data has been successfully submitted and loaded into the model. Processed {len(result)} entries."
-
-
-
-
-
 #---------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-# # Callback for loading the dataset based on selection
-# @app.callback(
-#     Output('selected-dataset', 'data'),
-#     [Input('change-1', 'n_clicks'), Input('change-2', 'n_clicks')],
-#     prevent_initial_call=True
-# )
-# def select_dataset(btn1_clicks, btn2_clicks):
-#     ctx = dash.callback_context
-#     if not ctx.triggered:
-#         raise PreventUpdate
-
-#     button_id = ctx.triggered[0]['prop_id'].split('.')[0]
-#     if button_id == 'change-1':
-#         return load_dataset()  # Assuming this function returns data in a serializable format
-#     elif button_id == 'change-2':
-#         return load_dataset_2()
-
-@app.callback(
-    Output('selected-dataset', 'data'),
-    [Input('url', 'pathname'),
-     Input('change-1', 'n_clicks', suppress_callback_exceptions=True),
-     Input('change-2', 'n_clicks', suppress_callback_exceptions=True)],
-    prevent_initial_call=True
-)
-def select_dataset(pathname, btn1_clicks, btn2_clicks):
-    ctx = dash.callback_context
-
-    if not ctx.triggered:
-        return no_update  # Prevent callback from firing without interaction
-
-    triggered_id = ctx.triggered[0]['prop_id'].split('.')[0]
-
-    if triggered_id == 'change-1' and pathname == '/database-1':
-        if btn1_clicks is None:
-            return no_update  # Avoid initial None value on page load
-        return load_dataset()  # Assuming this function loads dataset 1
-    elif triggered_id == 'change-2' and pathname == '/database-2':
-        if btn2_clicks is None:
-            return no_update  # Avoid initial None value on page load
-        return load_dataset_2()  # Assuming this function loads dataset 2
-
-    return no_update  # Prevent update if not the correct conditions
-
-
-# Callback for navigating to a specific dataset page
-@app.callback(
-    Output('url', 'pathname'),
-    [Input('change-1', 'n_clicks'), Input('change-2', 'n_clicks')],
-    prevent_initial_call=True
-)
-def change_dataset(btn1_clicks, btn2_clicks):
-    ctx = dash.callback_context
-    if not ctx.triggered:
-        raise PreventUpdate
-
-    button_id = ctx.triggered[0]['prop_id'].split('.')[0]
-    if button_id == 'change-1':
-        return '/database-1'
-    elif button_id == 'change-2':
-        return '/database-2'
 
 #DATASET NAVIGATION ---------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -259,7 +180,7 @@ def dataset_page_1():
         html.H1("Aviation General Database", style={'textAlign': 'center'}),
         dbc.Button("Unload Dataset and Return", id='unload-dataset-1', href="/databases", color="danger", className="me-1", style={'position': 'absolute', 'top': '20px', 'right': '20px'}),
         html.Div([
-            html.P("Detailed information and analytics for Aviation General Database."),
+            html.P("Detailed information and analytics for Aviation General Database."), 
             dbc.Button("Load Dataset 1", id='change-1', n_clicks=0)  # Ensure button is here
         ], style={'padding': '20px'})
     ])
@@ -273,20 +194,6 @@ def dataset_page_2():
             dbc.Button("Load Dataset 2", id='change-2', n_clicks=0)  # Ensure button is here
         ], style={'padding': '20px'})
     ])
-
-# @app.callback(Output('page-content', 'children'),
-#               [Input('url', 'pathname')])
-# def display_page(pathname):
-#     if pathname == '/databases':
-#         return databases_layout
-#     elif pathname == '/database-1':
-#         return dataset_page_1()
-#     elif pathname == '/database-2':
-#         return dataset_page_2()
-#     else:
-#         return html.Div("404 Page Not Found", style={'textAlign': 'center', 'marginTop': '20px'})  # Handling unknown paths
-
-
 #---------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 # Shared navigation bar setup
@@ -340,14 +247,6 @@ home_layout = html.Div([
     html.Div(
         dbc.InputGroup(
             [
-                # dbc.InputGroupText(html.I(className="fas fa-search")),
-                # dbc.Input(id='search-input', type='text', placeholder="Enter your search..."),
-                # dbc.Button("Submit", id='search-button', n_clicks = 0, color="primary")
-                
-                # html.Div(dcc.Input(id='input-on-submit', type='text')),
-                # html.Button('Submit', id='search-button', n_clicks=0),
-                # html.Div(id='search-input', children='Enter a value and press submit')
-
                 html.Div(dcc.Input(id='input-on-submit', type='text')),
                 html.Button('Submit', id='submit-val', n_clicks=0),
                 html.Div(id='container-button-basic', children='Enter a value and press submit')
@@ -401,7 +300,11 @@ home_layout = html.Div([
 
 # Index layout includes everything
 app.layout = html.Div([
-    dcc.Store(id='dataset-loaded', data={'loaded': False}),
+    # html.Button('Button 1', id='btn-nclicks-1', n_clicks=0),
+    # html.Button('Button 2', id='btn-nclicks-2', n_clicks=0),
+    # html.Button('Button 3', id='btn-nclicks-3', n_clicks=0),
+    html.Div(id='container-button-timestamp'),
+    dcc.Store(id='dataset-loaded', data={'loaded': False, 'dataset': None, 'content': ''}),
     html.Div(id='error-message', style={'color': 'red', 'fontSize': '16px'}),  # Styling for error messages
     dcc.Store(id='selected-dataset'),  # To store the selected dataset internally
     dcc.Store(id='store-quotes'),  # To store other data such as quotes
@@ -412,7 +315,116 @@ app.layout = html.Div([
 ], style={'height': '100vh', 'backgroundColor': '#eeefee', 'display': 'flex', 'flexDirection': 'column', 'justifyContent': 'space-between'})
 
 
+@callback(
+    [Output('dataset-loaded', 'data', allow_duplicate=True), Output('btn-nclicks-1-@', 'disabled')],
+    [Input('textarea-example', 'value')],
+    [State('dataset-loaded', 'data')],
+    prevent_initial_call=True
+)
+def update_submit_button_status(textarea_values, ds):
+    if ds is None:
+        # Handle the case when 'dataset-loaded' store is None
+        ds = {'loaded': False, 'dataset': None, 'content': ''}
+
+    disabled = True
+    print('textarea values', textarea_values)
+    if textarea_values == '':
+        ds['loaded'] = False
+        disabled = True
+    else:
+        ds['loaded'] = True
+        disabled = False
+
+    return ds, disabled
+
+
+
+@callback(
+    Output('dataset-loaded', 'data', allow_duplicate=True),
+    [Input('btn-nclicks-1-@', 'n_clicks'),
+    Input('textarea-example', 'value'),
+    Input('data-input-fields', 'children')],
+    [State('dataset-loaded', 'data')],
+    prevent_initial_call=True
+)
+def create_update_output(n_clicks, value, children, ds):
+    print('Children?', children)
+    if ds is None:
+        # Handle the case when 'dataset-loaded' store is None
+        ds = {'loaded': False, 'dataset': None, 'content': ''}
+
+    if n_clicks == 1:
+        #    dcc.Store(id='dataset-loaded', data={'loaded': False, 'dataset': None, 'content': ''}),
+
+        print(value)
+        if ctx.triggered_id == 'change-1':
+            print('ds inside if', ds)
+            ds['dataset'] = 1 #ctx.triggered_id
+        else: 
+            print('ds inside other if', ds)
+            ds['dataset'] = 2
+
+        props_values = []
+
+        # Loop through the JSON data
+        for item in children:
+            props = item.get('props')
+            if props is not None:
+                value = props.get('value')
+                if value is not None:
+                    props_values.append(value)
+
+        # Output the list of strings
+        print(props_values)
+
+        ds['content'] = props_values # list of strings
+        print('ds before return', ds) 
+
+        articles, stacked_embeddings = load_data_function(ds['content'])
+        
+        """
+        YOU WILL HAVE TO MAKE THIS SYNTACTICALLY CORRECT AND
+        THE OTHER LOGIC
+        """
+        
+        # You might/SHOULD create a store and update the store with the articles and stacked embeddings
+
+        return ds # this is the dataset store
+        # return articles, stacked_embeddings
+    else: 
+        print('No update.')
+        return no_update
+
+@callback(
+    Output('dataset-loaded', 'data', allow_duplicate=True),
+    [Input('btn-nclicks-1-@', 'n_clicks')],
+    [State('dataset-loaded', 'data')],
+    prevent_initial_call=True
+)
+def displayClick(n_clicks, ds):
+    msg = "None of the buttons have been clicked yet"
+    # if "btn-nclicks-1-@" == ctx.triggered_id: OLD LOGIC
+    if n_clicks > 0:
+        # msg = "Button 1 was most recently clicked"
+        # print("Button 1 was most recently clicked")
+        ds['dataset'] = 3 #'btn-nclicks-1-@'
+        return ds
+
+#This is the callback that is choosing the dataset that is currently being used. (Hello World)=====================================================================================================
+
+@callback(
+    Output('dataset', 'data', allow_duplicate=True),
+    Input('change-1', 'n_clicks'),
+    Input('change-2', 'n_clicks'),
+    prevent_initial_call=True
+)
+def displayClick(btn1, btn2):
+    print("Triggered", ctx.triggered_id)
+    return ctx.triggered_id
+
 # Define callback---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+#THIS CALLBack is going to 'select' the dataset that is currently being used through the buttons change-1, change-2, and Done. 
 
 @callback(
     Output('reasoning_box', 'children'),
@@ -449,107 +461,110 @@ def display_quote(*args):
     quote = top5_quotes[index] if index < len(top5_quotes) else "Invalid quote index"
     print("quote", quote)
     # Assuming 'openai' function is some processing function; adjust as needed
-    model_output = openai(top5_quotes, value)  # Ensure this function handles data correctly
-    print()
-    print("model_output", model_output[index])
-    return html.Div(model_output[index], style={'white-space': 'pre-wrap'})
+    model_output = openai(top5_quotes, value, index)  # Ensure this function handles data correctly
+    return html.Div(model_output, style={'white-space': 'pre-wrap'})
 
 
-@app.callback(
+# THIS IS WHY IT IS NOT WORKING - SELECTED_DATASET IS GONE - WE NEED THAT TO BE ABLE TO SELECT THE DATASET. 
+
+# @callback(
+#     [Output('article_box', 'children'), Output('store-quotes', 'data')],
+#     [Input('submit-val', 'n_clicks')],
+#     [State('input-on-submit', 'value'), State('selected-dataset', 'data')],
+#     prevent_initial_call=True
+# )
+# def update_output(n_clicks, value, selected_dataset):
+
+#     print("Submit-val button")
+#     if not selected_dataset:
+#         # Handle the case where no dataset is selected
+#         return html.Div("No dataset selected. Please select a dataset before searching."), {}
+#     if not value:
+#         # Handle the case where no query is provided
+#         return html.Div("No input provided. Please enter a query."), {}
+
+#     # Assuming `selected_dataset` contains the necessary data to run the search
+#     articles, article_embs = selected_dataset
+   
+#     select_article, top5_quotes = pipeline(value, article_embs, articles)
+
+#     # Construct HTML content
+#     highlighted_text = []
+#     for sentence in break_articles_into_sentences(select_article):
+#         if sentence in top5_quotes:
+#             # Highlight this sentence
+#             highlighted_text.append(html.Span(sentence, style={'backgroundColor': 'yellow'}))
+#         else:
+#             # Regular sentence
+#             highlighted_text.append(html.Span(sentence))
+#         highlighted_text.append(" ")  # Add space between sentences
+
+#     # Store top5_quotes and value for other callbacks to use
+#     store_data = {'top5_quotes': top5_quotes, 'value': value}
+
+#     return html.Div(highlighted_text), store_data
+
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------
+
+# @callback(
+#     [Output('store-quotes', 'data')],
+#     [State('selected-dataset', 'data')],
+#     prevent_initial_call=True
+# )
+
+# def select_database(selected_dataset):
+#     articles, article_embs = selected_dataset
+#     return articles, article_embs
+
+
+#------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+@callback(
     [Output('article_box', 'children'), Output('store-quotes', 'data')],
     [Input('submit-val', 'n_clicks')],
-    [State('input-on-submit', 'value'), State('selected-dataset', 'data')],
+    [State('input-on-submit', 'value'), State('dataset-loaded', 'data')],
     prevent_initial_call=True
 )
-def update_output(n_clicks, value, selected_dataset):
-    if not selected_dataset:
-        # Handle the case where no dataset is selected
+def update_output(n_clicks, value, ds):
+    if not ds:
+        # Handle the case where the dataset store doesn't have the expected structure
         return html.Div("No dataset selected. Please select a dataset before searching."), {}
     if not value:
-        # Handle the case where no query is provided
         return html.Div("No input provided. Please enter a query."), {}
+    
+    articles, article_embs = load_data_function(ds['content'])
 
-    # Assuming `selected_dataset` contains the necessary data to run the search
-    articles, article_embs = selected_dataset
     select_article, top5_quotes = pipeline(value, article_embs, articles)
 
-    # Construct HTML content
-    highlighted_text = []
-    for sentence in break_articles_into_sentences(select_article):
-        if sentence in top5_quotes:
-            # Highlight this sentence
-            highlighted_text.append(html.Span(sentence, style={'backgroundColor': 'yellow'}))
-        else:
-            # Regular sentence
-            highlighted_text.append(html.Span(sentence))
-        highlighted_text.append(" ")  # Add space between sentences
+    # Construct HTML content with highlighted text
+    highlighted_text = [
+        html.Span(sentence, style={'backgroundColor': 'yellow' if sentence in top5_quotes else ''}) 
+        for sentence in break_articles_into_sentences(select_article)
+    ]
 
-    # Store top5_quotes and value for other callbacks to use
     store_data = {'top5_quotes': top5_quotes, 'value': value}
 
     return html.Div(highlighted_text), store_data
 
-
 #----------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-from dash import callback_context
 
-# @app.callback(
-#     Output('page-content', 'children'),
-#     [Input('url', 'pathname')]
-# )
-# def render_page_content(pathname):
-#     if pathname == '/database-1':
-#         return dataset_page_1()  # Ensure this returns a layout that includes change-1 button
-#     elif pathname == '/database-2':
-#         return dataset_page_2()  # Ensure this returns a layout that includes change-2 button
-#     elif pathname == '/':
-#         return html.Div("This is the homepage.")
-#     else:
-#         return html.Div("404 Page Not Found", style={'textAlign': 'center', 'marginTop': '20px'})
-
-
-@app.callback(
-    Output('dataset-loaded', 'data'),
-    [Input('change-1', 'n_clicks'),
-     Input('change-2', 'n_clicks'),
-     Input('unload-dataset-1', 'n_clicks'),
-     Input('unload-dataset-2', 'n_clicks')],
-    prevent_initial_call=True
-)
-def manage_dataset_loaded(ch1_clicks, ch2_clicks, unld1_clicks, unld2_clicks):
-    ctx = callback_context
-    
-    if not ctx.triggered:
-        # If no buttons have been clicked yet, do nothing
-        raise PreventUpdate
-
-    # Get the ID of the button that triggered the callback
-    button_id = ctx.triggered[0]['prop_id'].split('.')[0]
-
-    # Check if it was a load or unload button
-    if button_id in ['change-1', 'change-2']:
-        # Load the dataset
-        # Here, you might also want to include the logic to actually load the dataset
-        return {'loaded': True}
-    elif button_id in ['unload-dataset-1', 'unload-dataset-2']:
-        # Unload the dataset
-        # Include any cleanup or state reset necessary here
-        return {'loaded': False}
-
-@app.callback(
+#new display page
+@callback(
     Output('page-content', 'children'),
     [Input('url', 'pathname')],
     [State('dataset-loaded', 'data')]  # Ensure this state is properly managed elsewhere in your app
 )
-def display_page(pathname, dataset_loaded):
+def display_page(pathname, ds):
+    # ds has 'loaded', 'dataset' which corresponds to the id of the button clicked, 'content'
     # Handle the route for creating a new dataset
+    dataset_id = ds['dataset']
     if pathname == '/create-dataset':
         return create_dataset_page()
     # Existing routes
     elif pathname == '/databases':
         # Check if any dataset has been loaded and redirect accordingly
-        if dataset_loaded and dataset_loaded.get('loaded', False):
+        if ds and ds.get('loaded', False):
             # Redirect to a specific dataset page if a dataset has been previously loaded
             return dataset_page_1()
         else:

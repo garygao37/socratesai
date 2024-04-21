@@ -16,5 +16,6 @@ def load_dataset_2():
 
 def load_data_function(textarea_values):
     stacked_embeddings = getDataset(textarea_values)
-    artciles = textarea_values
+    print(stacked_embeddings.shape)
+    articles = textarea_values
     return articles, stacked_embeddings
