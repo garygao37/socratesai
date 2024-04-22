@@ -173,27 +173,27 @@ def add_data_textarea(n_clicks, children):
 #---------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
-#DATASET NAVIGATION ---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+# #DATASET NAVIGATION ---------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-def dataset_page_1():
-    return html.Div([
-        html.H1("Aviation General Database", style={'textAlign': 'center'}),
-        dbc.Button("Unload Dataset and Return", id='unload-dataset-1', href="/databases", color="danger", className="me-1", style={'position': 'absolute', 'top': '20px', 'right': '20px'}),
-        html.Div([
-            html.P("Detailed information and analytics for Aviation General Database."), 
-            dbc.Button("Load Dataset 1", id='change-1', n_clicks=0)  # Ensure button is here
-        ], style={'padding': '20px'})
-    ])
+# def dataset_page_1():
+#     return html.Div([
+#         html.H1("Aviation General Database", style={'textAlign': 'center'}),
+#         dbc.Button("Unload Dataset and Return", id='unload-dataset-1', href="/databases", color="danger", className="me-1", style={'position': 'absolute', 'top': '20px', 'right': '20px'}),
+#         html.Div([
+#             html.P("Detailed information and analytics for Aviation General Database."), 
+#             dbc.Button("Load Dataset 1", id='change-1', n_clicks=0)  # Ensure button is here
+#         ], style={'padding': '20px'})
+#     ])
 
-def dataset_page_2():
-    return html.Div([
-        html.H1("Specialized News BBC Database", style={'textAlign': 'center'}),
-        dbc.Button("Unload Dataset and Return", id='unload-dataset-2', href="/databases", color="danger", className="me-1", style={'position': 'absolute', 'top': '20px', 'right': '20px'}),
-        html.Div([
-            html.P("Detailed information and analytics for Specialized News BBC Database."),
-            dbc.Button("Load Dataset 2", id='change-2', n_clicks=0)  # Ensure button is here
-        ], style={'padding': '20px'})
-    ])
+# def dataset_page_2():
+#     return html.Div([
+#         html.H1("Specialized News BBC Database", style={'textAlign': 'center'}),
+#         dbc.Button("Unload Dataset and Return", id='unload-dataset-2', href="/databases", color="danger", className="me-1", style={'position': 'absolute', 'top': '20px', 'right': '20px'}),
+#         html.Div([
+#             html.P("Detailed information and analytics for Specialized News BBC Database."),
+#             dbc.Button("Load Dataset 2", id='change-2', n_clicks=0)  # Ensure button is here
+#         ], style={'padding': '20px'})
+#     ])
 #---------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 # Shared navigation bar setup
@@ -381,6 +381,7 @@ def create_update_output(n_clicks, value, children, ds):
         print('ds before return', ds) 
 
         articles, stacked_embeddings = load_data_function(ds['content'])
+        ds['articles'] = articles
         
         """
         YOU WILL HAVE TO MAKE THIS SYNTACTICALLY CORRECT AND
@@ -429,15 +430,18 @@ def displayClick(btn1, btn2):
 @callback(
     Output('reasoning_box', 'children'),
     [Input(f'button-{i}', 'n_clicks') for i in range(1, 6)],
-    State('store-quotes', 'data'),  # Add this to access stored quotes and value
+    [State('dataset-loaded', 'data'),
+    State('store-quotes', 'data')],  # Add this to access stored quotes and value
     prevent_initial_call=True
 )
 def display_quote(*args):
+    ds = args[5]
+    print('this is args', args)
+    articles = ds['articles']
+    print("printed ds", ds)
     ctx = callback_context
-    button_states = args[:-1]
+    button_states = args[:5]
     store_data = args[-1]  # Last element is the store data
-    # print ("Store Data", store_data)
-    # print("args", args)
     if not ctx.triggered:
         # If no buttons have been pressed, return the default or nothing
         return ""
@@ -451,6 +455,7 @@ def display_quote(*args):
 
     # Identifying which button was pressed
     button_id = ctx.triggered[0]['prop_id'].split('.')[0]
+    print("the button id", button_id)
     index = int(button_id.split('-')[-1]) - 1  # Convert to zero-based index for accessing list
     print("index", index)
     
@@ -459,9 +464,11 @@ def display_quote(*args):
         return html.Div("Invalid quote index", style={'white-space': 'pre-wrap'})
 
     quote = top5_quotes[index] if index < len(top5_quotes) else "Invalid quote index"
+    for i in top5_quotes:
+        print("ABC", i)
     print("quote", quote)
     # Assuming 'openai' function is some processing function; adjust as needed
-    model_output = openai(top5_quotes, value, index)  # Ensure this function handles data correctly
+    model_output = openai(top5_quotes, value, index, articles)  # Ensure this function handles data correctly
     return html.Div(model_output, style={'white-space': 'pre-wrap'})
 
 
@@ -531,7 +538,7 @@ def update_output(n_clicks, value, ds):
         return html.Div("No dataset selected. Please select a dataset before searching."), {}
     if not value:
         return html.Div("No input provided. Please enter a query."), {}
-    
+    print("printing the ds", ds)
     articles, article_embs = load_data_function(ds['content'])
 
     select_article, top5_quotes = pipeline(value, article_embs, articles)
